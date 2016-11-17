@@ -1,10 +1,11 @@
-#include "npio.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
+#include <unistd.h>
+#include "npio.h"
 
 
 /* 100-long 64-bit signed array */
@@ -146,6 +147,11 @@ void test4()
   sz = ftell(f);
   fseek(f, 0, SEEK_SET);
   p = malloc(sz);
+  if (fread(p, 1, sz, f) != sz)
+  {
+    perror("fread");
+    exit(1);
+  }
 
   err = npio_load_mem(p, sz, &array);
   if (err)
@@ -162,7 +168,46 @@ void test4()
     total += data[i];
 
   assert(total == 4950);
+
+  npio_free_array(&array);
+  free(p);
   printf("test4 passed\n");
+}
+
+
+/* pipe in a file to ourselves to check read-based load */
+void test5()
+{
+  int fd, err;
+  npio_Array array;
+  size_t sz, i;
+  FILE* f;
+  int64_t *data, total;
+
+  f = popen("cat test1.npy", "r");
+  if (f == 0)
+  {
+    perror("popen");
+    exit(1);
+  }
+
+  fd = fileno(f);
+  npio_init_array(&array);
+  if ((err = npio_load_fd(fd, &array)))
+  {
+    fprintf(stderr, "npio_load_fd: %s\n", strerror(err));
+    exit(1);
+  }
+
+  data = (int64_t*) array.data;
+  total = 0;
+  for (i = 0; i < array.size; ++i)
+    total += data[i];
+  assert(total == 4950);
+
+  fclose(f);
+  npio_free_array(&array);
+  printf("test5 passed\n");
 }
 
 
@@ -172,5 +217,6 @@ int main()
   test2();
   test3();
   test4();
+  test5();
   return 0;
 }

@@ -1,8 +1,8 @@
 CC = gcc
 CXX = g++
 
-CFLAGS = -pedantic -Wall
-CXXFLAGS = -pedantic -Wall
+CFLAGS = -pedantic -Wall -g
+CXXFLAGS = -pedantic -Wall -g
 
 PREFIX := /usr
 

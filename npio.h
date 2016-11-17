@@ -104,6 +104,17 @@ typedef struct
 */
 
 
+/*
+
+Some internal notes:
+
+-  The _buf field is set if either loading from memory or from a mapped file.
+-  The data field is allocated by us if _buf is null.
+
+*/
+
+
+
 /* Compute the total number of elements from the shape. */
 static inline size_t npio_array_size(const npio_Array* array)
 {
@@ -464,6 +475,12 @@ static inline void npio_free_array(npio_Array* array)
     array->shape = 0;
   }
 
+  if (array->data && !array->_buf)
+  {
+    free(array->data);
+    array->data = 0;
+  }
+
   if (array->_mmapped)
   {
     munmap(array->_buf, array->_buf_size);
@@ -587,12 +604,14 @@ static inline int npio_load_header_fd_read_(int fd, npio_Array* array, size_t ma
     return ERANGE;
 
   /* We stick the prelude back together with the rest of the header */
-  if ((array->_hdr_buf = (char*) malloc(sizeof(prelude) + array->header_len)) == 0)
+  if ((array->_hdr_buf = (char*) malloc(prelude_size + array->header_len)) == 0)
     return ENOMEM;
   memcpy(array->_hdr_buf, prelude, sizeof(prelude));
 
-  /* Now read in the rest of the header */
-  nr = read(fd, array->_hdr_buf + sizeof(prelude), array->header_len);
+  /* Now read in the rest of the header, accounting for excess bytes possibly
+     read in with the prelude. */
+  nr = read(fd, array->_hdr_buf + sizeof(prelude)
+    , array->header_len - (sizeof(prelude) - prelude_size));
 
   /* Parse the header */
   return npio_ph_parse_dict_(array, array->_hdr_buf + prelude_size, end);
@@ -639,7 +658,11 @@ static inline int npio_load_header_fd3(int fd, npio_Array* array, size_t max_dim
   /* map-in the file */
   p = (char*) mmap(0, file_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
   if (p == MAP_FAILED)
+  {
+    if (lseek(fd, 0, SEEK_SET))
+      return errno;
     return npio_load_header_fd_read_(fd, array, max_dim);
+  }
 
   array->_mmapped = 1;
   array->_buf = p;
@@ -780,7 +803,7 @@ static inline int npio_load_data2(npio_Array* array, int swap_bytes)
   if (data_offset % 16)
     return EINVAL;
 
-  if (array->_mmapped)
+  if (array->_buf)
   {
     /* Check that the indicated data is within the mapped bounds. */
     /* We are also checking here that there is no trailing data. */
@@ -800,8 +823,10 @@ static inline int npio_load_data2(npio_Array* array, int swap_bytes)
     if (!array->data)
       return ENOMEM;
     nr = read(array->_fd, array->data, sz);
-    if (nr != (ssize_t) sz)
+    if (nr < 0)
       return errno;
+    if (nr != (ssize_t) sz)
+      return EINVAL;
   }
 
   /* Swap bytes if necessary */
@@ -841,6 +866,13 @@ static inline int npio_load_fd3(int fd, npio_Array* array, size_t max_dim)
     return err;
 
   return npio_load_data(array);
+}
+
+
+/* Same as above but with defaulted max_dim */
+static inline int npio_load_fd(int fd, npio_Array* array)
+{
+  return npio_load_fd3(fd, array, NPIO_DEFAULT_MAX_DIM);
 }
 
 
