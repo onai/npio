@@ -162,7 +162,7 @@ void test4()
     total += data[i];
 
   assert(total == 4950);
-  
+  printf("test4 passed\n");
 }
 
 
@@ -171,5 +171,6 @@ int main()
   test1();
   test2();
   test3();
+  test4();
   return 0;
 }

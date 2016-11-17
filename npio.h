@@ -65,7 +65,7 @@ Vishal (vishal@onutechnology.com)
 
 
 /* This struct represents the contents of a numpy file. */
-typedef struct 
+typedef struct
 {
   char   major_version;  /* The npy major version number. */
   char   minor_version;  /* The npy minor version number. */
@@ -82,7 +82,7 @@ typedef struct
   void   *data;          /* Pointer to contents*/
 
   /* The following fields are private. */
-  int    _fd;        /* File descriptor from which we are loading */  
+  int    _fd;        /* File descriptor from which we are loading */
   void*  _buf;       /* Memory buffer from where we are loading */
   size_t _buf_size;  /* Size of memory buffer from where we are loading */
   char*  _hdr_buf;   /* A buffer for the header, if we are loading from fd */
@@ -236,7 +236,7 @@ static inline int npio_ph_parse_dtype_(npio_Array* array)
 
   if (strlen(dtype) != 3)
     return ENOTSUP;
-  
+
   switch (dtype[0])
   {
     case '<': array->little_endian = 1; break;
@@ -262,7 +262,7 @@ static inline int npio_ph_parse_dtype_(npio_Array* array)
       break;
 
     default:
-      return ENOTSUP;  
+      return ENOTSUP;
   }
 
   switch (dtype[2])
@@ -296,7 +296,7 @@ static inline int npio_ph_parse_dict_(npio_Array* array, const char* start, cons
 
   if (p >= end)
     return EINVAL;
-  
+
   if (*p++ != '{')
     return EINVAL;
 
@@ -317,7 +317,7 @@ static inline int npio_ph_parse_dict_(npio_Array* array, const char* start, cons
     /* Expect the open quote of a key */
     if (!npio_ph_is_quote_(open_quote = *p++))
       return EINVAL;
-    
+
     /* Check for one of the three possible keys */
     if (p + 5 < end && memcmp(p, "descr", 5) == 0)
     {
@@ -356,14 +356,14 @@ static inline int npio_ph_parse_dict_(npio_Array* array, const char* start, cons
       case k_descr:
         if (!npio_ph_is_quote_(open_quote = *p++))
           return EINVAL;
-        dtbeg = p;  
+        dtbeg = p;
         while (p < end && *p != open_quote)
           ++p;
-        dtend = p;  
+        dtend = p;
         if (p == end)
           return EINVAL;
-        ++p;  
-        dtsz = dtend - dtbeg;  
+        ++p;
+        dtsz = dtend - dtbeg;
         array->dtype = (char*) malloc(dtsz + 1);
         memcpy(array->dtype, dtbeg, dtsz);
         array->dtype[dtsz] = 0;
@@ -387,7 +387,7 @@ static inline int npio_ph_parse_dict_(npio_Array* array, const char* start, cons
       case k_shape:
         if ((err = npio_ph_parse_shape_(array, p, end, &p)))
           return err;
-        break;  
+        break;
     }
 
     /* skip any spaces after end of key : value */
@@ -480,7 +480,7 @@ static inline void npio_free_array(npio_Array* array)
   {
     free(array->_hdr_buf);
     array->_hdr_buf = 0;
-  } 
+  }
 }
 
 
@@ -513,9 +513,9 @@ static inline int npio_load_header_prelude_(char* p, npio_Array* array, char** e
         + (p[1] << 8)
         + (p[2] << 16)
         + (p[3] << 24);
-      p += 4;  
+      p += 4;
       break;
-    
+
     default:
       return ENOTSUP;
   }
@@ -628,7 +628,7 @@ static inline int npio_load_header_fd3(int fd, npio_Array* array, size_t max_dim
   /* Store the file descriptor for load_data */
   if (!array->_opened)
     array->_fd = fd;
-  
+
   /* Get the file size in preparation to mmap */
   file_size = lseek(fd, 0, SEEK_END);
 
@@ -804,7 +804,7 @@ static inline int npio_load_data2(npio_Array* array, int swap_bytes)
       return errno;
   }
 
-  /* Swap bytes if necessary */ 
+  /* Swap bytes if necessary */
   if (swap_bytes && little_endian != array->little_endian)
   {
     array->little_endian = little_endian;
@@ -835,7 +835,7 @@ Return:
 static inline int npio_load_fd3(int fd, npio_Array* array, size_t max_dim)
 {
   int err;
-  
+
   /* First load the header. */
   if ((err = npio_load_header_fd3(fd, array, max_dim)))
     return err;
@@ -921,7 +921,7 @@ static inline int npio_save_header_mem(void* p, size_t sz, const npio_Array* arr
     , array->floating_point ? 'f' : array->is_signed ? 'i' : 'u'
     , array->bit_width / 8);
   /* There is no way hdr can overflow at this point! */
-  
+
   hdr += sprintf(hdr, "\"fortran_order\": %s, "
     , array->fortran_order ? "True" : "False");
   /* Again, no need to check for overflow here. */
@@ -983,7 +983,7 @@ static inline int npio_save_fd(int fd, const npio_Array* array)
   int err;
   ssize_t nw;
   size_t sz;
-  
+
   if ((err = npio_save_header_mem(hdr_buf, sizeof(hdr_buf), array, &end)))
     return err;
 
@@ -1003,7 +1003,7 @@ static inline int npio_save_fd(int fd, const npio_Array* array)
     return errno;
 
   /* all done */
-  return 0; 
+  return 0;
 }
 
 
@@ -1025,7 +1025,7 @@ static inline int npio_save(const char* filename, const npio_Array* array)
     return errno;
   err = npio_save_fd(fd, array);
   close(fd);
-  return err;  
+  return err;
 }
 
 
@@ -1148,7 +1148,7 @@ class Array
     #endif
 
 
-  public: 
+  public:
     Array(const char* filename, size_t max_dim = NPIO_DEFAULT_MAX_DIM)
     {
       npio_init_array(&array);
@@ -1235,14 +1235,14 @@ class Array
       if (i < array.dim)
         return array.shape[i];
       else
-        return 1;   
+        return 1;
     }
 
 
     // Returns whether the underlying data is of the specified type T.
     template <class T>
     bool isType() const
-    {      
+    {
       return Traits<T>::floating_point == array.floating_point
         && Traits<T>::is_signed == array.is_signed
         && Traits<T>::bit_width == array.bit_width;
@@ -1261,8 +1261,8 @@ class Array
         #else
           return 0;
         #endif
-        return (T*) array.data;
       }
+      return (T*) array.data;
     }
 
 
@@ -1272,12 +1272,12 @@ class Array
       {
         T* _begin;
         T* _end;
-        
+
         ValueRange(T* begin, T* end)
           : _begin(begin)
           , _end(end)
         {}
-        
+
         friend class Array;
 
         public:
@@ -1285,7 +1285,7 @@ class Array
           T* begin() const { return _begin; }
           T* end() const { return _end; }
       };
-    
+
       // For C++11 range-based for loops
       template <class T>
       ValueRange<T> values() const
@@ -1301,9 +1301,9 @@ class Array
           #endif
         }
       }
-    
+
     #endif
-    
+
 
     // Save the array back to file
     int save(const char* filename)

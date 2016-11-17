@@ -159,10 +159,8 @@ C API
 ### npio_Array
 
 The npio_Array structure is used to represent the array data loaded from a
-numpy file and also to describe data to be saved in numpy format. If you use
-the basic `npy_load()` function, you do not need to initialize this. In all
-other cases, you must call `npio_init_array()` to initialize before using one
-of these.
+numpy file and also to describe data to be saved in numpy format. You must
+always call `npio_init_array()` to initialize before using this structure.
 
 The following public members are read/write. i.e. you read these when you load
 a file and you can/must set these when you save a file.
