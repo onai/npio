@@ -29,5 +29,6 @@ test: npio_test_c npio_test_cpp example1 example2 example3 example4
 	./example4
 
 install:
+	install -d $(PREFIX)/include
 	install -m u=rw,og=r npio.h $(PREFIX)/include/
 

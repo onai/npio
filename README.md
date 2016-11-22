@@ -360,6 +360,10 @@ header was not truncated.
 - 0 on success.
 - `EINVAL`: if the array is not valid.
 
+NOTE: Current implementation returns ERANGE if the buffer is not large enough
+to hold the header.  To be fixed in future.
+
+
 
 C++ API
 -------
